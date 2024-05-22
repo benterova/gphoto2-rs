@@ -1,6 +1,5 @@
 use std::env;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 fn main() {
     let libgphoto2_dir = env::var_os("LIBGPHOTO2_DIR").map(PathBuf::from);
@@ -14,6 +13,8 @@ fn main() {
         if cfg!(windows) {
             // This has to be hardcoded because on Windows only .la get put into the lib dir :(
             println!("cargo:rustc-link-search=native={}", libgphoto2_dir.join("bin").display());
+            println!("cargo:rustc-link-lib=static=gphoto2");
+            println!("cargo:include={}", libgphoto2_dir.join("include").display());
         }
     }
 
@@ -24,19 +25,16 @@ fn main() {
         .expect("Could not find libgphoto2");
 
     #[cfg(windows)]
-    let lib = {
+    let include_paths = {
         let libgphoto2_dir = libgphoto2_dir.expect("LIBGPHOTO2_DIR must be set on Windows");
-
-        let mut library = pkg_config::Library::new();
-        library.libs.push("gphoto2".to_string());
-        library.link_paths.push(libgphoto2_dir.join("bin"));
-        library.include_paths.push(libgphoto2_dir.join("include"));
-        library.defines = HashMap::new();
-        library
+        vec![libgphoto2_dir.join("include")]
     };
 
+    #[cfg(not(windows))]
+    let include_paths = lib.include_paths;
+
     let bindings = bindgen::Builder::default()
-        .clang_args(lib.include_paths.iter().map(|path| format!("-I{}", path.to_str().unwrap())))
+        .clang_args(include_paths.iter().map(|path| format!("-I{}", path.to_str().unwrap())))
         .header("src/wrapper.h")
         .generate_comments(true)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
