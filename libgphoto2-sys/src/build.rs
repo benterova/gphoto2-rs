@@ -1,5 +1,6 @@
 use std::env;
 use std::path::PathBuf;
+use std::collections::HashMap;
 
 fn main() {
     let libgphoto2_dir = env::var_os("LIBGPHOTO2_DIR").map(PathBuf::from);
@@ -25,12 +26,13 @@ fn main() {
     #[cfg(windows)]
     let lib = {
         let libgphoto2_dir = libgphoto2_dir.expect("LIBGPHOTO2_DIR must be set on Windows");
-        pkg_config::Library {
-            libs: vec!["gphoto2".to_string()],
-            link_paths: vec![libgphoto2_dir.join("bin")],
-            include_paths: vec![libgphoto2_dir.join("include")],
-            defines: vec![],
-        }
+
+        let mut library = pkg_config::Library::new();
+        library.libs.push("gphoto2".to_string());
+        library.link_paths.push(libgphoto2_dir.join("bin"));
+        library.include_paths.push(libgphoto2_dir.join("include"));
+        library.defines = HashMap::new();
+        library
     };
 
     let bindings = bindgen::Builder::default()
