@@ -7,7 +7,7 @@ fn main() {
     #[cfg(feature = "test")]
     let libgphoto2_dir = libgphoto2_dir.or_else(|| Some(gphoto2_test::libgphoto2_dir().to_owned()));
 
-    if let Some(libgphoto2_dir) = libgphoto2_dir {
+    if let Some(ref libgphoto2_dir) = libgphoto2_dir {
         env::set_var("PKG_CONFIG_PATH", libgphoto2_dir.join("lib/pkgconfig"));
 
         if cfg!(windows) {
@@ -26,7 +26,7 @@ fn main() {
 
     #[cfg(windows)]
     let include_paths = {
-        let libgphoto2_dir = libgphoto2_dir.expect("LIBGPHOTO2_DIR must be set on Windows");
+        let libgphoto2_dir = libgphoto2_dir.as_ref().expect("LIBGPHOTO2_DIR must be set on Windows");
         vec![libgphoto2_dir.join("include")]
     };
 
