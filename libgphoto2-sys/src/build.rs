@@ -12,14 +12,20 @@ fn main() {
 
     if cfg!(windows) {
       // This has to be hardcoded because on Windows only .la get put into the lib dir :(
-      println!("cargo:rustc-link-search=native={}", libgphoto2_dir.join("bin").display());
+      // println!("cargo:rustc-link-search=native={}", libgphoto2_dir.join("bin").display());
     }
   }
 
-  let lib = pkg_config::Config::new()
+  let lib = match(cfg!(windows)) {
+    true => {
+      let libgphoto2_dir = libgphoto2_dir.as_ref().expect("LIBGPHOTO2_DIR must be set on Windows");
+      vec![libgphoto2_dir.join("include")]
+    },
+    false => pkg_config::Config::new()
     .atleast_version("2.5.10")
     .probe("libgphoto2")
-    .expect("Could not find libgphoto2");
+    .expect("Could not find libgphoto2")
+  };
 
   let bindings = bindgen::Builder::default()
     .clang_args(lib.include_paths.iter().map(|path| format!("-I{}", path.to_str().unwrap())))
